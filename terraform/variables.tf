@@ -1,7 +1,7 @@
 variable "project_name" {
     type = string
     description = "The name of the project"
-    default = "aws-defence"
+    default = "aws-serverless-security-hardening"
 }
 
 variable "aws_region" {
