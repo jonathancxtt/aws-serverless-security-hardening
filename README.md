@@ -1,4 +1,4 @@
-# Hardened Serverless Web Application on AWS
+# AWS Serverless Security Hardening
 
 A serverless web application built on AWS, progressively hardened against API abuse, injection attacks, and automated traffic. This project applies IAM least privilege, WAF-based request filtering, server-side validation, and Infrastructure as Code to a public-facing form submission API.
 
