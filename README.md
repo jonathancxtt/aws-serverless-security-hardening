@@ -251,7 +251,7 @@ Terraform is not transactional. When an apply fails, it does not roll back the r
 
 **Resolution**
 
-Fixed the error — added `depends_on = [aws_api_gateway_integration.cors_integration]` to the integration response to ensure the parent integration existed before the response was created, then ran `terraform apply` again. Terraform read the state file, identified what already existed, skipped those resources, and only created what was missing.
+Fixed the error, added `depends_on = [aws_api_gateway_integration.cors_integration]` to the integration response to ensure the parent integration existed before the response was created, then ran `terraform apply` again. Terraform read the state file, identified what already existed, skipped those resources, and only created what was missing.
 
 **Lesson**
 
