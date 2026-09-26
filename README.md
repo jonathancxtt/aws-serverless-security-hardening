@@ -257,6 +257,36 @@ Fixed the error, added `depends_on = [aws_api_gateway_integration.cors_integrati
 
 A failed `terraform apply` is always safe to retry after fixing the underlying error. Terraform will never duplicate resources that already exist in state. The state file is the source of truth. This is why protecting the state file matters. If it is lost or corrupted, Terraform loses track of what exists and risks creating duplicates or failing to manage existing resources.
 
+### API Gateway Resource Policy Changes Require a Redeployment
+
+**Problem**
+
+After applying an IP restriction via `aws_api_gateway_rest_api_policy`, requests from external IPs were still returning 200 and writing records to DynamoDB. The policy was visible in the API Gateway console but was not enforcing anything.
+
+**Investigation**
+
+The resource policy was confirmed present and correctly formatted in the AWS console. A notice at the top of the Resource Policy page read: "You must redeploy your API for changes to this policy to take effect."
+
+**Root Cause**
+
+API Gateway stages point at a specific deployment snapshot. When a resource policy is added or changed, the existing deployment snapshot does not automatically update. The stage continues serving requests using the old snapshot which has no knowledge of the new policy.
+
+**Resolution**
+
+Added a `triggers` block to `aws_api_gateway_deployment` referencing the resource policy. This forces Terraform to create a new deployment whenever the policy changes, and updates the stage to point at it.
+
+```hcl
+triggers = {
+  redeployment = sha1(jsonencode([
+    aws_api_gateway_rest_api_policy.ip_restrict.policy
+  ]))
+}
+```
+
+**Lesson**
+
+In API Gateway, changes to resource policies, authorizers, and certain settings do not take effect until the API is redeployed. Applying infrastructure changes through Terraform does not automatically redeploy the stage. Use the `triggers` block on the deployment resource to create an explicit link between configuration changes and redeployments. Without this, Terraform reports a successful apply while the live stage continues running the old configuration.
+
 ---
 
 ## Roadmap
