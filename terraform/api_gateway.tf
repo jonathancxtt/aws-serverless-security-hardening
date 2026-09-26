@@ -23,7 +23,7 @@ resource "aws_api_gateway_integration" "form_integration" {
 
   integration_http_method = "POST"
   uri = aws_lambda_function.form_handler.invoke_arn
-}
+} 
 
 //Options Configuration to handle CORS integration
 resource "aws_api_gateway_method" "cors_options_method" {
@@ -83,6 +83,12 @@ resource "aws_api_gateway_deployment" "form_api_deployment" {
     aws_api_gateway_integration.form_integration,
     aws_api_gateway_integration.cors_integration
    ]
+
+  triggers = {
+    redeployment = sha1(jsonencode([
+      aws_api_gateway_rest_api_policy.ip_restrict.policy
+    ]))
+  }
   
   lifecycle {
     create_before_destroy = true
@@ -102,4 +108,23 @@ resource "aws_lambda_permission" "aws_gateway_invoke" {
   function_name = aws_lambda_function.form_handler.function_name
   principal = "apigateway.amazonaws.com"
   source_arn = "${aws_api_gateway_rest_api.form_api.execution_arn}/*/*"
+}
+
+resource "aws_api_gateway_rest_api_policy" "ip_restrict" {
+  rest_api_id = aws_api_gateway_rest_api.form_api.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = "*"
+      Action    = "execute-api:Invoke"
+      Resource  = "${aws_api_gateway_rest_api.form_api.execution_arn}/*"
+      Condition = {
+        IpAddress = {
+          "aws:SourceIp" = ["${var.my_ip}"]
+        }
+      }
+    }]
+  })
 }
