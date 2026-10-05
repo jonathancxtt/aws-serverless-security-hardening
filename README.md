@@ -17,7 +17,7 @@ The architecture mirrors a real production incident I managed in year one, where
 | IAM role and permissions | Completed |
 | Terraform (IaC) | In Progress |
 | AWS WAF | Planned |
-| IP-based access restriction | Planned |
+| IP-based access restriction | Completed |
 | Server-side reCAPTCHA validation | Planned |
 | CSP response headers | Planned |
 | CloudFront distribution and S3 frontend | Planned |
