@@ -2,7 +2,7 @@ import requests
 import time
 import sys
 
-API_URL = "https://1cq4v6b0xi.execute-api.ap-southeast-1.amazonaws.com/prod/submit"
+API_URL = ""
 
 PAYLOADS = [
     {"name": "' OR 1=1--", "email": "sqli@test.com", "message": "test"},
