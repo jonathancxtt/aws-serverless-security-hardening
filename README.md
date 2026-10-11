@@ -296,7 +296,7 @@ In API Gateway, changes to resource policies, authorizers, and certain settings 
 - [x] Lambda function deployed and tested
 - [x] API Gateway REST API with POST and OPTIONS, tested with curl
 - [x] IAM execution role with least privilege permissions
-- [ ] IP-based access restriction for testing phase
+- [x] IP-based access restriction for testing phase
 - [ ] Attack simulation script and before-state evidence
 - [ ] AWS WAF with OWASP managed rules and rate limiting
 - [ ] Server-side reCAPTCHA validation in Lambda
