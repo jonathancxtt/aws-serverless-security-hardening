@@ -18,8 +18,8 @@ data "aws_iam_policy_document" "lambda_permissions_policy" {
   statement {
     sid       = "CloudWatchLogsAccess"
     effect    = "Allow"
-    actions   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = ["arn:aws:logs:*:*:*"]
+    actions   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+    resources = ["${aws_cloudwatch_log_group.lambda_logs.arn}:*"]
   }
 }
 

@@ -94,7 +94,7 @@ Lambda assumes an execution role with two permission statements:
 
 `dynamodb:PutItem` on this specific table ARN only. Lambda cannot read, scan, query, update, or delete records. If the function is compromised, the blast radius is limited to writing new items.
 
-`logs:CreateLogGroup`, `logs:CreateLogStream`, `logs:PutLogEvents` for CloudWatch. Lambda cannot access any other AWS service.
+`logs:CreateLogStream` and `logs:PutLogEvents` on the function's own log group only. The log group is created by Terraform with a 14-day retention, so Lambda does not need `logs:CreateLogGroup`. Lambda cannot access any other AWS service.
 
 ---
 
@@ -102,7 +102,7 @@ Lambda assumes an execution role with two permission statements:
 
 ### IAM Least Privilege
 
-The Lambda execution role grants the minimum permissions required for the function to operate. No wildcard actions, no broad resource ARNs. The permission policy is scoped to a single action on a single resource.
+The Lambda execution role grants the minimum permissions required for the function to operate. No wildcard actions, no broad resource ARNs. DynamoDB access is scoped to a single action on a single table, and CloudWatch Logs access is scoped to the function's own log group.
 
 ### Environment Variables for Configuration
 
@@ -133,7 +133,7 @@ Terraform provisions all AWS resources in this project. No resources are created
 Resources currently managed by Terraform:
 
 - DynamoDB table
-- Lambda function, execution role, and permissions policy
+- Lambda function, execution role, permissions policy, and CloudWatch log group
 - API Gateway REST API, resource, methods, integrations, deployment, and stage
 
 Resources being migrated to Terraform:
@@ -312,7 +312,7 @@ In API Gateway, changes to resource policies, authorizers, and certain settings 
 ## Repository Structure
 
 ```
-aws-defence-in-depth-incident-rebuild/
+aws-serverless-security-hardening/
 ├── terraform/
 │   ├── main.tf
 │   ├── variables.tf
@@ -327,8 +327,10 @@ aws-defence-in-depth-incident-rebuild/
 ├── lambda/
 │   └── handler.py
 ├── scripts/
-│   └── attack.py           (planned)
-├── evidence/
+│   └── attack.py           (in progress)
+├── docs/
+│   └── architecture.png
+├── evidence/               (planned)
 │   ├── before/
 │   └── after/
 └── README.md
