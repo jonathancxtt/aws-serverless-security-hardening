@@ -22,7 +22,7 @@ The architecture mirrors a real production incident I managed in year one, where
 | CSP response headers | Planned |
 | CloudFront distribution and S3 frontend | Planned |
 | Security testing and attack simulation | Planned |
-| Monitoring and logging | Planned |
+| Monitoring and logging | In Progress |
 
 ---
 
@@ -80,7 +80,9 @@ A Python 3.12 function that receives the API Gateway proxy event, parses the req
 
 The DynamoDB table name is injected as an environment variable at deploy time. The function never has the table name hardcoded. This pattern extends to secrets: in a later phase the reCAPTCHA secret key will be passed the same way.
 
-The current function has no request validation. This is deliberate. The unvalidated state is the baseline the attack simulation runs against.
+The function rejects requests whose body is missing or is not a JSON object with a 400, and returns a generic message on internal errors so exception details are never exposed to the client. Full error details are written to CloudWatch Logs instead.
+
+Beyond that, the function performs no content validation. This is deliberate. SQL injection and XSS payloads are accepted and stored, and that unvalidated state is the baseline the attack simulation runs against.
 
 ### API Gateway
 
@@ -287,6 +289,28 @@ triggers = {
 
 In API Gateway, changes to resource policies, authorizers, and certain settings do not take effect until the API is redeployed. Applying infrastructure changes through Terraform does not automatically redeploy the stage. Use the `triggers` block on the deployment resource to create an explicit link between configuration changes and redeployments. Without this, Terraform reports a successful apply while the live stage continues running the old configuration.
 
+### Duplicate Deployments From Terraform State Drift
+
+**Problem**
+
+After adding a Terraform-managed CloudWatch log group, `terraform plan` proposed creating an API Gateway and DynamoDB table that were already deployed and in use. The AWS account contained two partial copies of the project: one named `aws-defence-*` and one named `aws-serverless-security-hardening-*`.
+
+**Investigation**
+
+`terraform state list` showed the state file tracked only the `aws-defence-*` Lambda, IAM role, and policy. Listing resources with the AWS CLI showed the working API, table, and Lambda all used the `aws-serverless-security-hardening-*` names, and none of them were in state. The `project_name` in `terraform.tfvars` had been changed at some point, and the live deployment had been created with a different state file than the one in the project folder.
+
+**Root Cause**
+
+Terraform only manages resources recorded in its state file. It does not scan AWS for resources that look like they belong to the configuration, because names are not reliable identifiers: some resources (such as REST APIs) allow duplicate names, and adopting a resource automatically would let Terraform modify or destroy infrastructure it did not create. With the state file stored locally and the project name changed, a second set of resources was created that this state file had no record of.
+
+**Resolution**
+
+Destroyed the stale `aws-defence-*` resources with `terraform destroy`, deleted the untracked copy with the AWS CLI, set a single `project_name` in `terraform.tfvars`, and rebuilt the full stack with one `terraform apply`. A follow-up `terraform plan` against an unchanged configuration is the check that state and AWS agree.
+
+**Lesson**
+
+The state file is the only link between Terraform code and real infrastructure. If it is local, lost, or duplicated, Terraform silently loses track of resources. Treat `project_name` as fixed once resources exist, make changes only through Terraform, and use a remote backend (S3 with state locking) so every machine uses the same state. When existing resources do need to be brought under management, use `terraform import` explicitly rather than expecting Terraform to discover them.
+
 ---
 
 ## Roadmap
@@ -304,6 +328,7 @@ In API Gateway, changes to resource policies, authorizers, and certain settings 
 - [ ] CSP response headers via CloudFront
 - [ ] CloudFront secret header to close direct API bypass
 - [ ] After-state evidence and attack simulation comparison
+- [ ] Remote Terraform state (S3 backend with locking)
 - [ ] Monitoring and CloudWatch log review
 - [ ] Final architecture documentation and Loom walkthrough
 
