@@ -48,6 +48,5 @@ def lambda_handler(event, context):
 
         return response(200, "Submission received.")
     except Exception:
-        # Full details go to CloudWatch only; the client gets a generic message
         logger.exception("Failed to process submission")
         return response(500, "Failed to process submission.")

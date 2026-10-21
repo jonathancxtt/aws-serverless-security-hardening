@@ -111,7 +111,9 @@ A Content Security Policy at the CloudFront layer will restrict where the browse
 
 ### Terraform
 
-All AWS resources are provisioned with Terraform, except one-time account setup (IAM admin user and budget alert). Console deployments are not reproducible; Terraform makes every change reviewable before it is applied and lets the whole environment be destroyed and rebuilt identically.
+All AWS resources are provisioned with Terraform, except one-time account setup (IAM admin user, budget alert, and the state bucket). Console deployments are not reproducible; Terraform makes every change reviewable before it is applied and lets the whole environment be destroyed and rebuilt identically.
+
+State is stored remotely in a versioned, private S3 bucket using the S3 backend with native state locking (`use_lockfile`). This gives one source of truth across machines, a version history to recover a corrupted state file, and a lock that prevents two applies from running at once. The bucket is created by hand rather than by this configuration, because Terraform needs it to exist before it can store state, and keeping it outside the project means `terraform destroy` can never delete its own state.
 
 ---
 
@@ -156,7 +158,7 @@ Full write-ups, each with problem, investigation, root cause, resolution, and le
 - [ ] CSP response headers via CloudFront
 - [ ] CloudFront secret header to close direct API bypass
 - [ ] After-state evidence and attack simulation comparison
-- [ ] Remote Terraform state (S3 backend with locking)
+- [x] Remote Terraform state (S3 backend with locking)
 - [ ] Monitoring and CloudWatch log review
 - [ ] Final architecture documentation and Loom walkthrough
 
