@@ -131,6 +131,27 @@ All testing is conducted against infrastructure in my own AWS account.
 
 ---
 
+## Local Setup
+
+**Python** (for the attack simulation script):
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Terraform** (state is stored in a pre-created S3 bucket, see [Terraform](#terraform)):
+
+```bash
+cd terraform
+# create terraform.tfvars with aws_region, project_name, and my_ip (your public IP as x.x.x.x/32)
+terraform init
+terraform plan
+```
+
+---
+
 ## Lessons Learned
 
 Full write-ups, each with problem, investigation, root cause, resolution, and lesson, are in [docs/lessons-learned.md](./docs/lessons-learned.md).
@@ -188,6 +209,8 @@ aws-serverless-security-hardening/
 │   └── lessons-learned.md
 ├── evidence/               (planned)
 │   ├── before/
-│   └── after/
+│   ├── after-waf/
+│   └── after-recaptcha/
+├── requirements.txt
 └── README.md
 ```

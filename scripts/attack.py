@@ -2,8 +2,6 @@ import requests
 import time
 import sys
 
-API_URL = ""
-
 PAYLOADS = [
     {"name": "' OR 1=1--", "email": "sqli@test.com", "message": "test"},
     {"name": "Ec22322", "email": "test@test.com", "message": "'; DROP TABLE submissions;--"},
