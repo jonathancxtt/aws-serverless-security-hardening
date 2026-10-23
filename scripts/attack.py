@@ -1,6 +1,13 @@
-import requests
+import argparse
+import json
 import time
-import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+
+import requests
+import boto3
+from boto3.dynamodb.conditions import Attr
 
 PAYLOADS = [
     {"name": "' OR 1=1--", "email": "sqli@test.com", "message": "test"},
@@ -13,3 +20,6 @@ PAYLOADS = [
     {"name": "Ec22322", "email": "xss4@test.com", "message": "javascript:alert(1)"},
     {"name": "1; SELECT SLEEP(5)--", "email": "sqli4@test.com", "message": "test"},
 ]
+
+BURST_PAYLOAD = {"name": "burst", "email": "burst@test.com", "message": "rate limit test"}
+
