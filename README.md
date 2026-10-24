@@ -2,7 +2,7 @@
 
 A serverless web application built on AWS, progressively hardened against API abuse, injection attacks, and automated traffic. This project applies IAM least privilege, WAF-based request filtering, server-side validation, and Infrastructure as Code to a public-facing form submission API.
 
-The architecture mirrors a real production incident I managed in year one, where an automated script via a vulnerability scanner bypassed a public-facing web portal's frontend entirely and submitted malicious records directly to the API. This project reconstructs that system on AWS, demonstrates the vulnerable state, and applies the same class of controls that resolved the original incident.
+The architecture mirrors a real production incident I managed in year one. A recent change had removed the server-side CAPTCHA check from a public-facing web portal's form submission API, and a bot exploited the gap by submitting records directly to the API. The incident was contained within 40 minutes, and WAF and CDN protection were added during the hardening that followed. This project reconstructs that system on AWS, demonstrates the vulnerable state, and applies the same class of controls layer by layer.
 
 ---
 
@@ -48,7 +48,7 @@ Before and after evidence is collected by running [`scripts/attack.py`](./script
 
 ## Why I Built This
 
-During a production incident, an automated attack script bypassed frontend validation and submitted thousands of malicious records directly to the API. All CAPTCHA and input validation existed only in the browser. The attacker never touched the browser.
+During a production incident, a change that removed a server-side CAPTCHA check left a form submission API with nothing on the server to tell a real user from a script. A bot submitted records directly to the API. There was no second layer to catch the traffic once that one control was gone.
 
 This project exists to work through that failure from first principles on AWS: build the vulnerable state deliberately, demonstrate the attack, then apply controls layer by layer and prove each one works. The goal is not to follow a checklist of AWS services. It is to understand why each control exists and what the system looks like without it.
 
@@ -99,11 +99,11 @@ The Lambda execution role has two permissions and nothing else:
 
 ### WAF at Two Layers (Planned)
 
-WAF will sit on both the API Gateway stage and a CloudFront distribution. In the original incident, WAF existed only at the CDN layer and the attacker bypassed it by calling the API directly. WAF at the API stage catches those requests independently.
+WAF will sit on both the API Gateway stage and a CloudFront distribution. In the original incident, WAF and a CDN were only added during post-incident hardening. Placing WAF at the API stage as well as the CDN means requests sent straight to the API, bypassing CloudFront, are still filtered.
 
 ### Server-Side reCAPTCHA (Planned)
 
-The original CAPTCHA ran only in the browser. A Python script never executes JavaScript, so it was irrelevant to the attack. Lambda will verify every token with Google before writing to DynamoDB, and reject requests without a valid token with a 400.
+In the original incident, the server-side CAPTCHA check had been removed in a recent change, so nothing on the server verified that a submission came from a real user. Lambda will verify every token with Google before writing to DynamoDB, and reject requests without a valid token with a 400. Because the check runs on the server, a script cannot skip it by avoiding the browser.
 
 ### CSP Headers (Planned)
 
