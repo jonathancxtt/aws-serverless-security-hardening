@@ -78,7 +78,7 @@ A POST method on `/submit` uses Lambda proxy integration: the full HTTP request 
 
 ### Lambda
 
-Parses the request body, builds a submission record, and writes it to DynamoDB. The table name is injected as an environment variable at deploy time, so nothing environment-specific is hardcoded; the reCAPTCHA secret will follow the same pattern.
+Parses the request body, builds a submission record, and writes it to DynamoDB. The table name is injected as an environment variable at deploy time, so nothing environment-specific is hardcoded. Environment variables are only used for non-sensitive configuration, because anyone who can view the function's configuration can read them in plain text. Secrets are handled separately (see [Server-Side reCAPTCHA](#server-side-recaptcha-planned)).
 
 Requests with a missing or malformed body are rejected with a 400. Internal errors return a generic message, with full details written only to CloudWatch Logs. Beyond that, the function performs **no content validation, by design**: SQLi and XSS payloads are accepted and stored, and that unvalidated state is the baseline the attack simulation runs against.
 
@@ -104,6 +104,8 @@ WAF will sit on both the API Gateway stage and a CloudFront distribution. In the
 ### Server-Side reCAPTCHA (Planned)
 
 In the original incident, the server-side CAPTCHA check had been removed in a recent change, so nothing on the server verified that a submission came from a real user. Lambda will verify every token with Google before writing to DynamoDB, and reject requests without a valid token with a 400. Because the check runs on the server, a script cannot skip it by avoiding the browser.
+
+The reCAPTCHA secret key will be stored in SSM Parameter Store as a `SecureString`, not in an environment variable. Lambda reads it at startup, and its IAM role will be allowed to read that one parameter only. Terraform creates the parameter, but the value is set separately with the AWS CLI so the secret never appears in Terraform code or state. Parameter Store was chosen over Secrets Manager because standard parameters are free and a reCAPTCHA key does not need automatic rotation.
 
 ### CSP Headers (Planned)
 
@@ -158,7 +160,7 @@ Full write-ups, each with problem, investigation, root cause, resolution, and le
 
 - [Serverless runtime has no access to local files](./docs/lessons-learned.md#serverless-runtime-has-no-access-to-local-files): runtime config must come from the infrastructure layer, not `.tfvars` or `.env`.
 - [Lambda permission and IAM are two separate permission systems](./docs/lessons-learned.md#lambda-permission-and-iam-are-two-separate-permission-systems): IAM controls what Lambda can do; `aws_lambda_permission` controls who can call it.
-- [Terraform does not roll back on failure](./docs/lessons-learned.md#terraform-does-not-roll-back-on-failure): a failed apply is safe to retry because state records what succeeded.
+- [Terraform does not roll back on failure](./docs/lessons-learned.md#terraform-does-not-roll-back-on-failure): a failed apply is usually safe to retry, because state records what succeeded.
 - [API Gateway resource policy changes require a redeployment](./docs/lessons-learned.md#api-gateway-resource-policy-changes-require-a-redeployment): a `triggers` block ties policy changes to new deployments.
 - [Duplicate deployments from Terraform state drift](./docs/lessons-learned.md#duplicate-deployments-from-terraform-state-drift): Terraform only manages what is in its state file, and never adopts existing resources automatically.
 

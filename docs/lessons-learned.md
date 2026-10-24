@@ -70,7 +70,7 @@ Fixed the error, added `depends_on = [aws_api_gateway_integration.cors_integrati
 
 **Lesson**
 
-A failed `terraform apply` is always safe to retry after fixing the underlying error. Terraform will never duplicate resources that already exist in state. The state file is the source of truth. This is why protecting the state file matters. If it is lost or corrupted, Terraform loses track of what exists and risks creating duplicates or failing to manage existing resources.
+A failed `terraform apply` is usually safe to retry after fixing the underlying error, because Terraform skips resources that are already recorded in state. The exception is a resource that was created in AWS but never recorded, for example when Terraform crashes or times out mid-apply. A retry then fails with an "already exists" error, or leaves an orphaned resource, and the fix is to bring it into state with `terraform import`. The state file is the source of truth. This is why protecting the state file matters. If it is lost or corrupted, Terraform loses track of what exists and risks creating duplicates or failing to manage existing resources.
 
 ## API Gateway Resource Policy Changes Require a Redeployment
 
