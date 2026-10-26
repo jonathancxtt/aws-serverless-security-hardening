@@ -37,5 +37,3 @@ def parse_args():
     if args.api_url is None:
         parser.error("No API URL provided. Set the API_URL environment variable or pass --api-url argument.")
     return args
-
-print(parse_args())
